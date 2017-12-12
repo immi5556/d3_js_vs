@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link href="LiveUpdate_Bar.css" rel="stylesheet" />
+    <script src="../Scripts/d3.v3.min.js"></script>
+    <script src="../Scripts/jquery-1.10.2.min.js"></script>
+    <script src="../Scripts/jspdf.min.js"></script>
+    <script src="../Scripts/jspdf.plugin.svgToPdf.js"></script>
+    <title></title>
+</head>
+<body>
+    <div id="chart"></div>
+    <div id="editor"></div>
+    <input type="button" id="pdfTo" value="Pdf" />
+    <script src="LiveUpdate_Bar.js"></script>
+    <script>
+        var doc = new jsPDF();
+        var specialElementHandlers = {
+            '#editor': function (element, renderer) {
+                return true;
+            }
+        };
+        $("#pdfTo").on("click", function () {
+            doc.fromHTML($('#chart').html(), 15, 15, {
+                'width': 170,
+                'elementHandlers': specialElementHandlers
+            });
+            doc.save('sample-file.pdf');
+        });
+    </script>
+</body>
+</html>

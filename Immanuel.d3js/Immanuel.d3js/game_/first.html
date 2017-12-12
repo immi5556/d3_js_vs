@@ -1,0 +1,202 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script type="text/javascript" src="d3.v4.min.js"></script>
+	</head>
+	<body>
+		<img id="fwcol" src="fw.gif" width="60px" height="60px" style="position: fixed; display: none;" />
+		<div id="contt" class="set-tile" style="width: 100%;height: 100%;overflow: hidden;">
+			
+		</div>
+		<script>
+		function nozoom() {
+		  d3.event.preventDefault();
+		};
+		d3.select("body")
+		    .on("touchstart", nozoom)
+		    .on("touchmove", nozoom);
+		var tt = document.getElementById("contt");
+		var w = tt.clientWidth,
+	    h = tt.clientHeight;
+
+		var svg = d3.select("#contt").append("svg")
+		    .attr("width", w)
+		    .attr("height", h);
+
+		var color = d3.scaleOrdinal(d3.schemeCategory20c);
+
+	    var nodedata  = d3.range(20).map(function() {
+		      return {
+		        cx: w * Math.random(),
+		        cy: h * Math.random(),
+		        dx: Math.random() - 0.5 + 16,
+		        dy: Math.random() - 0.5 + 16,
+		        radius: 16,
+		        bg: color(Math.ceil((Math.random() * 20)))
+		      };
+		    });
+
+		var circle = svg.selectAll("circle")
+		    .data(nodedata)
+		  .enter().append("circle")
+		    .attr("r", 16)
+		    .attr("cx", function(d) { 
+		    	d.cx += d.dx; if (d.cx > w) d.cx -= w; else if (d.cx < 0) d.cx += w; return d.cx; 
+		    })
+		    .attr("cy", function(d) { 
+		    	d.cy += d.dy; if (d.cy > h) d.cy -= h; else if (d.cy < 0) d.cy += h; return d.cy; 
+		    })
+		    .style("fill", function(d) { return d.bg; })
+		    .on("click", clickevt);
+
+	    circle.call(d3.drag()
+		    .on("start", dragstarted)
+		    .on("drag", dragged)
+		    .on("end", dragended));
+
+	    function clickevt(nde){
+   		 d3.select(nde)
+   		 	.transition()
+   		 	.duration(400)
+   		 	//.attr( 'r', 16 )
+   		 	.style("fill", function(d){
+   		 		d.bg = color(Math.ceil((Math.random() * 20)));
+   		 		return d.bg;
+   		 	});
+	    }
+
+	    //circle.tween('collision', collisionDetection);
+      //.each('end', move);
+		var starttime, endtime;
+	    function dragstarted(d) {
+	    	starttime = new Date();
+	    	d3.select(this).moveToBack();
+		  //d3.select(this).raise().classed("active", true);
+		  //d3.select(this)
+   			//.transition()
+   			//.duration(900);
+   			//.attr( 'r', 26 )
+   			//.style("fill", color(Math.ceil((Math.random() * 20))) );
+		}
+		var drgident = 0;
+		function dragended(d) {
+		  //d3.select(this).classed("active", false);
+		  //d3.select(this)
+   			//.transition()
+   			//.duration(900)
+   			//.attr( 'r', 16 );
+   			//.style("fill", color(Math.ceil((Math.random() * 20))) );
+   			var sec = (new Date() - starttime) / 1000;
+   			console.log(sec);
+   			if (sec < 0.3){
+   				clickevt(this)
+   				return;
+   			}
+   			cirs = d3.selectAll('circle')._groups[0];
+	      	text.text(cirs.length);
+   			drgident = 0;
+   			collisionDetection(this);
+		}
+
+		function dragged(d) {
+			//console.log("x" + d3.event.x);
+		  d3.select(this)
+		    .attr("cx", d.x = d3.event.x)
+		    .attr("cy", d.y = d3.event.y);
+		}
+
+		var text = svg.append("text")
+		    .attr("x", 20)
+		    .attr("y", 20);
+
+	    var cirs = d3.selectAll('circle')._groups[0];
+		text.text(cirs.length);
+
+		var start = Date.now(),
+		    frames = 0;
+
+	    var collisionDetection = function(node) {
+	      var thisCircle = d3.select(node);
+	      cirs.forEach(function(itm) {
+	        var otherCircle = d3.select(itm);
+	        if (thisCircle.datum() !== otherCircle.datum()) {
+
+	          dx = thisCircle.attr('cx') - otherCircle.attr('cx'),
+	            dy = thisCircle.attr('cy') - otherCircle.attr('cy'),
+	            distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+
+	          if (distance < +thisCircle.attr('r') + +otherCircle.attr('r')) {
+	          	++drgident;
+	            collision(thisCircle, otherCircle);
+	          }
+        	}
+	      });
+	    }
+
+	    var ocirc = undefined;
+		var collision = function(thisCircle, otherCircle) {
+		    console.log('Collision at: ' + thisCircle.attr('cx') + ',' + thisCircle.attr('cy'));
+		    //otherCircle.style('fill', 'red');
+		    console.log(otherCircle.style('fill') + "--- "+ thisCircle.style('fill'));
+		    if (otherCircle.style('fill') == thisCircle.style('fill')){
+		    	console.log("collided : same color" );
+		    	document.getElementById('fwcol').style.display = 'block';
+		    	document.getElementById('fwcol').style.left = (thisCircle.attr('cx') - 30) + "px"
+		    	document.getElementById('fwcol').style.top = (thisCircle.attr('cy') - 30) + "px"
+		    	function delee(thisCircle, otherCircle){
+		    		ocirc = otherCircle;
+		    		setTimeout(function(){ 
+			    		var tdata = thisCircle.datum();
+			    		var odata = otherCircle.datum();
+			    		thisCircle.remove();
+			    		otherCircle
+			    		.transition()
+	   					.duration(500)
+			    		.attr("r", function(d) {
+			    			d.radius = tdata.radius + odata.radius;
+			    			return d.radius;
+			    			//console.log(d);
+			    		});
+			    		document.getElementById('fwcol').style.display = 'none'; 
+			    		cirs = d3.selectAll('circle')._groups[0];
+	      				text.text(cirs.length);
+			    	}, 500);
+		    	};
+		    	if (drgident <= 1){
+		    		delee(thisCircle, otherCircle);
+		    	} else {
+		    		delee(ocirc, otherCircle);
+		    	}
+		    }
+		}
+	    //setInterval(function() {
+		//d3.timer(function() {
+		//   // Update the FPS meter.
+		//   var now = Date.now(), duration = now - start;
+		//   //text.text(~~(++frames * 1000 / duration));
+		//   if (duration >= 1000) frames = 0, start = now;
+
+		//   // Update the circle positions.
+		   // circle
+		   //     .attr("cx", function(d) { d.x += d.dx; if (d.x > w) d.x -= w; else if (d.x < 0) d.x += w; return d.x; })
+		   //     .attr("cy", function(d) { d.y += d.dy; if (d.y > h) d.y -= h; else if (d.y < 0) d.y += h; return d.y; })
+		   //     .attr("r", Math.random() * 4);
+
+		 //}, 500);
+
+		 d3.selection.prototype.moveToFront = function() {  
+	      	return this.each(function(){
+		        this.parentNode.appendChild(this);
+	      	});
+	    };
+	    d3.selection.prototype.moveToBack = function() {  
+	        return this.each(function() { 
+	            var firstChild = this.parentNode.firstChild; 
+	            if (firstChild) { 
+	                this.parentNode.insertBefore(this, firstChild); 
+	            } 
+	        });
+	    };
+		</script>
+	</body>
+</html>
